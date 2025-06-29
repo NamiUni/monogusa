@@ -1,21 +1,17 @@
 plugins {
-    kotlin("jvm") version "2.1.21"
+    `kotlin-dsl`
 }
 
-group = "io.github.namiuni"
-version = "1.0-SNAPSHOT"
-
 repositories {
-    mavenCentral()
+    gradlePluginPortal()
 }
 
 dependencies {
-    testImplementation(kotlin("test"))
-}
+    implementation(libs.indra.common)
+    implementation(libs.indra.licenser.spotless)
+    implementation(libs.shadow)
+    implementation(libs.gremlin.gradle)
 
-tasks.test {
-    useJUnitPlatform()
-}
-kotlin {
-    jvmToolchain(21)
+    // https://github.com/gradle/gradle/issues/15383#issuecomment-779893192
+    implementation(files(libs.javaClass.superclass.protectionDomain.codeSource.location))
 }

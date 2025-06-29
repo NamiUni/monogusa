@@ -1,19 +1,22 @@
 plugins {
-    id("java")
+    id("monogusa.base")
 }
 
-group = "io.github.namiuni.monogusa"
-version = "1.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
-}
+val projectVersion: String by project
+version = projectVersion
 
 dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    api(libs.gremlin.runtime)
+    compileOnly(libs.configurate.yaml)
+    compileOnlyApi(libs.adventure.api)
+    compileOnly(libs.adventure.minimessage)
+    api(libs.adventure.serializer.configurate) {
+        isTransitive = false
+    }
 }
 
-tasks.test {
-    useJUnitPlatform()
+indraSpotlessLicenser {
+    property("name", "monogusa")
+    property("author", "Namiu (うにたろう)") // DO NOT DELETE: "Namiu (うにたろう)"
+    property("contributors", "")
 }
