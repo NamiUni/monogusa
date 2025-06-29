@@ -27,16 +27,13 @@ tasks {
             hangar("PlaceholderAPI", "2.11.6")
         }
     }
-
-    writeDependencies {
-        outputFileName = "monogusa-dependencies.txt"
-    }
 }
 
 paperPluginYaml {
     name = "MonogusaPaper"
-    main = "io.github.namiuni.monogusa.MonogusaPaper"
-    loader = "io.github.namiuni.monogusa.MonogusaLoader"
+    loader = "io.github.namiuni.monogusa.example.MonogusaLoader"
+    bootstrapper = "io.github.namiuni.monogusa.example.MonogusaBootstrap"
+    main = "io.github.namiuni.monogusa.example.MonogusaPaper"
     apiVersion = "1.21"
     author = "Namiu (うにたろう)"
     version = rootProject.version.toString()
