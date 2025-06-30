@@ -8,7 +8,7 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.monogusaCommon)
+    implementation(projects.monogusa)
     implementation(libs.configurate.hocon) {
         exclude("net.kyori", "option")
     }

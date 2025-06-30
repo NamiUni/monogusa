@@ -16,5 +16,5 @@ pluginManagement {
     includeBuild("build-logic")
 }
 
-include("example-paper")
-include("monogusa-common")
+include("monogusa-example")
+include("monogusa")
