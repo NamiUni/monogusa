@@ -2,13 +2,13 @@ import org.gradle.kotlin.dsl.invoke
 
 plugins {
     id("monogusa.base")
-    id("monogusa.platform")
+    id("monogusa.example-platform")
     alias(libs.plugins.run.paper)
     alias(libs.plugins.resource.factory.paper)
 }
 
 dependencies {
-    implementation(projects.monogusaCommon)
+    implementation(projects.monogusa)
     implementation(libs.configurate.hocon) {
         exclude("net.kyori", "option")
     }

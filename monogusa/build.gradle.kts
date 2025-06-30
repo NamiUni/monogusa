@@ -6,11 +6,16 @@ val projectVersion: String by project
 version = projectVersion
 
 dependencies {
+    // Gremlin
     api(libs.gremlin.runtime)
-    api(libs.configurate.core) {
+
+    // Configurate
+    compileOnly(libs.configurate.core) {
         exclude("net.kyori", "option")
     }
-    compileOnlyApi(libs.adventure.api)
+
+    // Adventure
+    compileOnly(libs.adventure.api)
     compileOnly(libs.adventure.minimessage)
     api(libs.adventure.serializer.configurate) {
         isTransitive = false
@@ -19,6 +24,6 @@ dependencies {
 
 indraSpotlessLicenser {
     property("name", "monogusa")
-    property("author", "Namiu (うにたろう)") // DO NOT DELETE: "Namiu (うにたろう)"
+    property("author", "Namiu (うにたろう)")
     property("contributors", "")
 }
