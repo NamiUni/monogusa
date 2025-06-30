@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.monogusa;
+package io.github.namiuni.monogusa.common;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;

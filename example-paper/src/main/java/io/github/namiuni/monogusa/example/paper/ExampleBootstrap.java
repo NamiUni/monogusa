@@ -19,7 +19,7 @@
  */
 package io.github.namiuni.monogusa.example.paper;
 
-import io.github.namiuni.monogusa.ReloadableHolder;
+import io.github.namiuni.monogusa.common.ReloadableHolder;
 import io.github.namiuni.monogusa.configuration.ConfigurationHolder;
 import io.github.namiuni.monogusa.example.paper.configurations.PrimaryConfig;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
