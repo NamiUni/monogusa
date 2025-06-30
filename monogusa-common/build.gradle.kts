@@ -7,7 +7,9 @@ version = projectVersion
 
 dependencies {
     api(libs.gremlin.runtime)
-    api(libs.configurate.core)
+    api(libs.configurate.core) {
+        exclude("net.kyori", "option")
+    }
     compileOnlyApi(libs.adventure.api)
     compileOnly(libs.adventure.minimessage)
     api(libs.adventure.serializer.configurate) {

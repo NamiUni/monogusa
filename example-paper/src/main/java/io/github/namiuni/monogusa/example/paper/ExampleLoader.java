@@ -17,29 +17,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.monogusa.example;
+package io.github.namiuni.monogusa.example.paper;
 
-import io.papermc.paper.plugin.bootstrap.BootstrapContext;
-import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
-import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
-import org.bukkit.plugin.java.JavaPlugin;
+import io.papermc.paper.plugin.loader.PluginClasspathBuilder;
+import io.papermc.paper.plugin.loader.PluginLoader;
 import org.jspecify.annotations.NullMarked;
+import xyz.jpenilla.gremlin.runtime.platformsupport.DefaultsPaperPluginLoader;
 
-/**
- * This class is meant for loading resources of the plugin before the server is loaded.
- */
 @NullMarked
 @SuppressWarnings({"UnstableApiUsage", "unused"})
-public final class MonogusaBootstrap implements PluginBootstrap {
+public final class ExampleLoader implements PluginLoader {
 
     @Override
-    public void bootstrap(final BootstrapContext context) {
-        // TODO: Initialize resources
-        // TODO: Register commands
-    }
-
-    @Override
-    public JavaPlugin createPlugin(final PluginProviderContext context) {
-        return new MonogusaPaper(); // TODO: Create JavaPlugin instance
+    public void classloader(final PluginClasspathBuilder classpathBuilder) {
+        new DefaultsPaperPluginLoader().classloader(classpathBuilder);
     }
 }
