@@ -2,7 +2,7 @@
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-rootProject.name = "monogusa-template"
+rootProject.name = "monogusa"
 
 dependencyResolutionManagement {
     repositories {
@@ -16,5 +16,9 @@ pluginManagement {
     includeBuild("build-logic")
 }
 
-include("monogusa-example")
+include("monogusa-example-paper")
 include("monogusa")
+
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
