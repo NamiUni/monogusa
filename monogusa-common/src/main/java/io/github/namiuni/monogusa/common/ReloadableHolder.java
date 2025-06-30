@@ -1,4 +1,4 @@
-package io.github.namiuni.monogusa;
+package io.github.namiuni.monogusa.common;
 
 import java.util.function.Supplier;
 import org.jspecify.annotations.NullMarked;

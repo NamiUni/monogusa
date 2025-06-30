@@ -1,6 +1,6 @@
-package io.github.namiuni.monogusa.configuration;
+package io.github.namiuni.monogusa.common.configuration;
 
-import io.github.namiuni.monogusa.ReloadableHolder;
+import io.github.namiuni.monogusa.common.ReloadableHolder;
 import java.util.Objects;
 import java.util.function.Supplier;
 import org.jspecify.annotations.NullMarked;
