@@ -7,7 +7,7 @@ version = projectVersion
 
 dependencies {
     api(libs.gremlin.runtime)
-    compileOnly(libs.configurate.yaml)
+    api(libs.configurate.core)
     compileOnlyApi(libs.adventure.api)
     compileOnly(libs.adventure.minimessage)
     api(libs.adventure.serializer.configurate) {
