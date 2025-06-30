@@ -1,5 +1,5 @@
 /*
- * MonogusaPaper
+ * MonogusaExamplePaper
  *
  * Copyright (c) 2025. Namiu (うにたろう)
  *                     Contributors []
