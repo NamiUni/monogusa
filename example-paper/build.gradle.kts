@@ -8,7 +8,10 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.common)
+    implementation(projects.monogusaCommon)
+    implementation(libs.configurate.hocon) {
+        exclude("net.kyori", "option")
+    }
     compileOnly(libs.paper.api) {
         exclude("net.md-5")
     }
@@ -30,10 +33,10 @@ tasks {
 }
 
 paperPluginYaml {
-    name = "MonogusaPaper"
-    loader = "io.github.namiuni.monogusa.example.MonogusaLoader"
-    bootstrapper = "io.github.namiuni.monogusa.example.MonogusaBootstrap"
-    main = "io.github.namiuni.monogusa.example.MonogusaPaper"
+    name = "MonogusaExamplePaper"
+    loader = "io.github.namiuni.monogusa.example.paper.ExampleLoader"
+    bootstrapper = "io.github.namiuni.monogusa.example.paper.ExampleBootstrap"
+    main = "io.github.namiuni.monogusa.example.paper.ExamplePaper"
     apiVersion = "1.21"
     author = "Namiu (うにたろう)"
     version = rootProject.version.toString()

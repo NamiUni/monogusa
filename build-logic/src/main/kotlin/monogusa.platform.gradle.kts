@@ -13,6 +13,8 @@ tasks {
         archiveVersion = rootProject.version.toString()
         archiveClassifier = null as String?
 
+        relocateDependency("io.leangen.geantyref")
+        relocateDependency("org.spongepowered.configurate")
         relocateDependency("net.kyori.adventure.serializer.configurate4")
         relocateDependency("xyz.jpenilla.gremlin")
     }

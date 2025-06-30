@@ -17,4 +17,4 @@ pluginManagement {
 }
 
 include("example-paper")
-include("common")
+include("monogusa-common")

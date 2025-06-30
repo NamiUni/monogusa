@@ -17,17 +17,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.monogusa.example;
+package io.github.namiuni.monogusa.example.paper;
 
+import io.github.namiuni.monogusa.example.paper.configurations.PrimaryConfig;
+import java.util.function.Supplier;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * This class manages the behavior when this plugin is enabled or disabled.
- */
 @NullMarked
 @SuppressWarnings("unused")
-public final class MonogusaPaper extends JavaPlugin {
+public final class ExamplePaper extends JavaPlugin {
+
+    private final Supplier<PrimaryConfig> primaryConfig;
+
+    // If the argument type is Supplier, the reload method will not be accidentally called.
+    public ExamplePaper(final Supplier<PrimaryConfig> primaryConfig) {
+        this.primaryConfig = primaryConfig;
+    }
 
     @Override
     public void onEnable() {
