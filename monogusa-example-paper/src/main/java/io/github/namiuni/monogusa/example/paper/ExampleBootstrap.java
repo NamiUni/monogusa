@@ -20,7 +20,7 @@
 package io.github.namiuni.monogusa.example.paper;
 
 import io.github.namiuni.monogusa.common.ReloadableHolder;
-import io.github.namiuni.monogusa.configuration.ConfigurationHolder;
+import io.github.namiuni.monogusa.configuration.ReloadableConfiguration;
 import io.github.namiuni.monogusa.example.paper.configurations.PrimaryConfig;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
@@ -41,7 +41,7 @@ public final class ExampleBootstrap implements PluginBootstrap {
 
     @Override
     public void bootstrap(final BootstrapContext context) {
-        this.initializeResources(context);
+        this.initializeConfiguration(context);
     }
 
     @Override
@@ -50,7 +50,7 @@ public final class ExampleBootstrap implements PluginBootstrap {
         return new ExamplePaper(this.configHolder);
     }
 
-    private void initializeResources(final BootstrapContext context) {
+    private void initializeConfiguration(final BootstrapContext context) {
         // Create ConfigurationLoader instance.
         final HoconConfigurationLoader configurationLoader = HoconConfigurationLoader.builder()
                 .defaultOptions(options -> options
@@ -67,10 +67,9 @@ public final class ExampleBootstrap implements PluginBootstrap {
                 .build();
 
         // Create ReloadableHolder instance.
-        this.configHolder = ConfigurationHolder
-                .builder()
+        this.configHolder = ReloadableConfiguration.builder()
                 .loader(configurationLoader)
-                .clazz(PrimaryConfig.class)
-                .create("Failed to load primary config");
+                .raw(PrimaryConfig.class)
+                .create();
     }
 }

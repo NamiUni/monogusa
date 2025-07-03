@@ -32,20 +32,20 @@ import org.jspecify.annotations.NullMarked;
  * @param <T> the type of value held
  */
 @NullMarked
-public interface ReloadableHolder<T> extends Supplier<T> {
+public sealed interface ReloadableHolder<T> extends Supplier<T> permits ReloadableHolderImpl {
 
     /**
-     * Creates a simple {@code ReloadableHolder} backed by the given supplier.
+     * Creates a simple {@code ReloadableHolder} backed by the given instantiation.
      *
      * <p>Each call to {@link #reload()} on the returned holder will invoke
      * {@link Supplier#get()} on the provided supplier to fetch a new value.</p>
      *
-     * @param    supplier the supplier to be used for initial creation and subsequent reloads
+     * @param    instantiation the supplier to be used for initial creation and subsequent reloads
      * @param    <T> the type of value
      * @return   a new {@code ReloadableHolder} instance
      */
-    static <T> ReloadableHolder<T> simple(final Supplier<T> supplier) {
-        return new SimpleReloadableHolder<>(supplier);
+    static <T> ReloadableHolder<T> simple(final Instantiation<T> instantiation) {
+        return new ReloadableHolderImpl<>(instantiation);
     }
 
     /**
