@@ -42,7 +42,7 @@ public final class SimpleDependencyResolver {
         final DependencyCache cache = new DependencyCache(cacheDirectory);
         final Logger logger = LoggerFactory.getLogger(SimpleDependencyResolver.class.getSimpleName());
         final Set<Path> files;
-        try (final DependencyResolver downloader = new DependencyResolver(logger)) {
+        try (DependencyResolver downloader = new DependencyResolver(logger)) {
             files = downloader.resolve(dependencies, cache).jarFiles();
         }
 

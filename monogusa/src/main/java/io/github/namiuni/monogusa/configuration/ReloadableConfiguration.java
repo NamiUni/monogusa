@@ -19,16 +19,16 @@
  */
 package io.github.namiuni.monogusa.configuration;
 
+import io.github.namiuni.monogusa.common.Instantiation;
 import io.github.namiuni.monogusa.common.ReloadableHolder;
 import java.util.Objects;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.loader.ConfigurationLoader;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 
 /**
  * A factory and builder for creating a {@link ReloadableHolder} for a
@@ -39,9 +39,9 @@ import org.spongepowered.configurate.transformation.ConfigurationTransformation;
  * {@link ConfigurationLoader}.</p>
  */
 @NullMarked
-public final class ConfigurationHolder {
+public final class ReloadableConfiguration {
 
-    private ConfigurationHolder() {
+    private ReloadableConfiguration() {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
@@ -69,22 +69,6 @@ public final class ConfigurationHolder {
          * @return   the next step of the builder
          */
         IConfigurationClass loader(L loader);
-
-        /**
-         * Sets a supplier that provides the {@link ConfigurationLoader} instance.
-         *
-         * <p>This is useful for lazy initialization or for constructing the loader
-         * using its own builder within a lambda.</p>
-         * <pre>{@code
-         * .loader(() -> YamlConfigurationLoader.builder()
-         *     .path(path)
-         *     .build())
-         * }</pre>
-         *
-         * @param    loaderSupplier a supplier for the fully configured loader instance
-         * @return   the next step of the builder
-         */
-        IConfigurationClass loader(Supplier<L> loaderSupplier);
     }
 
     /**
@@ -101,7 +85,7 @@ public final class ConfigurationHolder {
          * @param    <C>   the type of the configuration class
          * @return   the final, loadable builder stage
          */
-        <C> ILoadable<C> clazz(Class<C> clazz);
+        <C> ILoadable<C> raw(Class<C> clazz);
     }
 
     /**
@@ -112,104 +96,77 @@ public final class ConfigurationHolder {
     public interface ILoadable<C> {
 
         /**
-         * (Optional) Applies a {@link ConfigurationTransformation} to the configuration node
-         * after loading, typically used for migrating older configuration formats.
+         * Applies a function to the raw {@link ConfigurationNode} after loading
+         * but before deserialization. This can be used for migrations, transformations,
+         * or any custom node manipulation.
          *
-         * @param    transformation The transformation to apply
-         * @return   the current builder instance for further chaining
+         * @param nodeConsumer A consumer that accepts the root configuration node.
+         * @return The current builder instance for further chaining.
          */
-        ILoadable<C> transformation(ConfigurationTransformation transformation);
+        ILoadable<C> postProcess(Consumer<ConfigurationNode> nodeConsumer);
 
         /**
          * Creates the {@link ReloadableHolder}. This method triggers the initial
          * load of the configuration.
          *
-         * @return   a fully configured, reloadable holder for the configuration
-         * @throws   UncheckedConfigurateException if the initial load fails
+         * @return a fully configured, reloadable holder for the configuration
+         * @throws UncheckedConfigurateException if the initial load fails
          */
         ReloadableHolder<C> create() throws UncheckedConfigurateException;
-
-        /**
-         * Creates the {@link ReloadableHolder} with a custom message for exceptions.
-         * This method triggers the initial load of the configuration.
-         *
-         * @param    exceptionMessage a custom message to include if an exception is thrown
-         * @return   a fully configured, reloadable holder for the configuration
-         * @throws   UncheckedConfigurateException if the initial load fails
-         */
-        ReloadableHolder<C> create(String exceptionMessage) throws UncheckedConfigurateException;
     }
 
     private static final class Builder<L extends ConfigurationLoader<? extends ConfigurationNode>, C> implements IConfigurationLoader<L>, IConfigurationClass, ILoadable<C> {
 
-        private @SuppressWarnings("NotNullFieldNotInitialized") Supplier<L> loaderSupplier;
+        private L loader;
         private @SuppressWarnings("NotNullFieldNotInitialized") Class<C> clazz;
-        private @Nullable ConfigurationTransformation transformation;
+        private @Nullable Consumer<ConfigurationNode> nodeConsumer;
 
         @Override
         public IConfigurationClass loader(final L loader) {
             Objects.requireNonNull(loader, "loader");
-            this.loaderSupplier = () -> loader;
-            return this;
-        }
-
-        @Override
-        public IConfigurationClass loader(final Supplier<L> loaderSupplier) {
-            this.loaderSupplier = Objects.requireNonNull(loaderSupplier, "loaderSupplier");
+            this.loader = loader;
             return this;
         }
 
         @Override
         @SuppressWarnings("unchecked")
-        public <T> ILoadable<T> clazz(final Class<T> clazz) {
-            this.clazz = (Class<C>) Objects.requireNonNull(clazz, "clazz");
+        public <T> ILoadable<T> raw(final Class<T> clazz) {
+            Objects.requireNonNull(clazz, "clazz");
+            this.clazz = (Class<C>) clazz;
             return (ILoadable<T>) this;
         }
 
         @Override
-        public ILoadable<C> transformation(final ConfigurationTransformation transformation) {
-            this.transformation = transformation;
+        public ILoadable<C> postProcess(final Consumer<ConfigurationNode> nodeConsumer) {
+            this.nodeConsumer = nodeConsumer;
             return this;
         }
 
-        @Override
-        public ReloadableHolder<C> create() throws UncheckedConfigurateException {
-            return this.create(null);
-        }
-
-        @Override
-        public ReloadableHolder<C> create(@Nullable final String exceptionMessage) throws UncheckedConfigurateException {
-            final Supplier<C> loadingAction = () -> {
+        public ReloadableHolder<C> create() throws UncheckedConfigurateException { // TODO: Seek the best exception handling.
+            final Instantiation<@Nullable C> instantiate = () -> {
                 try {
-                    return this.loadInternal();
+                    final ConfigurationNode rootNode = this.loader.load();
+
+                    if (!this.clazz.isAnnotationPresent(ConfigSerializable.class)) {
+                        throw new ConfigurateException(rootNode, "Not marked with @Serializable annotation: %s".formatted(this.clazz.getName()));
+                    }
+
+                    if (this.nodeConsumer != null) {
+                        this.nodeConsumer.accept(rootNode);
+                    }
+
+                    final C config = rootNode.get(this.clazz);
+                    if (config == null) {
+                        throw new ConfigurateException(rootNode, "Failed to deserialize %s from node".formatted(this.clazz.getName()));
+                    }
+                    this.loader.save(rootNode);
+                    return config;
                 } catch (final ConfigurateException exception) {
-                    throw new UncheckedConfigurateException(exceptionMessage, exception);
+                    throw new UncheckedConfigurateException("Failed to load configuration", exception);
                 }
             };
 
-            return ReloadableHolder.simple(loadingAction);
-        }
-
-        private C loadInternal() throws ConfigurateException {
-            final ConfigurationLoader<? extends ConfigurationNode> loader = this.loaderSupplier.get();
-            final ConfigurationNode root = loader.load();
-
-            if (!this.clazz.isAnnotationPresent(ConfigSerializable.class)) {
-                throw new ConfigurateException(root, "%s not marked with @ConfigSerializable".formatted(this.clazz.getName()));
-            }
-
-            if (this.transformation != null) {
-                this.transformation.apply(root);
-            }
-
-            final C config = root.get(this.clazz);
-            if (config == null) {
-                throw new ConfigurateException(root, "Failed to deserialize %s from node".formatted(this.clazz.getName()));
-            }
-
-            loader.save(root);
-
-            return config;
+            return ReloadableHolder.simple(instantiate);
         }
     }
 }

@@ -20,23 +20,22 @@
 package io.github.namiuni.monogusa.common;
 
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-final class SimpleReloadableHolder<T> implements ReloadableHolder<T> {
+final class ReloadableHolderImpl<T> implements ReloadableHolder<T> {
 
-    private final Supplier<T> supplier;
+    private final Instantiation<T> instantiation;
     private final AtomicReference<T> reference;
 
-    SimpleReloadableHolder(final Supplier<T> supplier) {
-        this.supplier = supplier;
-        this.reference = new AtomicReference<>(supplier.get());
+    ReloadableHolderImpl(final Instantiation<T> instantiation) {
+        this.instantiation = instantiation;
+        this.reference = new AtomicReference<>(instantiation.instantiate());
     }
 
     @Override
     public void reload() {
-        this.reference.set(this.supplier.get());
+        this.reference.set(this.instantiation.instantiate());
     }
 
     @Override
