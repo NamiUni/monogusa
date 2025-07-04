@@ -19,7 +19,7 @@
  */
 package io.github.namiuni.monogusa.configuration;
 
-import io.github.namiuni.monogusa.common.Instantiation;
+import io.github.namiuni.monogusa.common.InstanceFactory;
 import io.github.namiuni.monogusa.common.ReloadableHolder;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -143,7 +143,7 @@ public final class ReloadableConfiguration {
         }
 
         public ReloadableHolder<C> create() throws UncheckedConfigurateException { // TODO: Seek the best exception handling.
-            final Instantiation<@Nullable C> instantiate = () -> {
+            final InstanceFactory<@Nullable C> instantiate = () -> {
                 try {
                     final ConfigurationNode rootNode = this.loader.load();
 
@@ -166,7 +166,7 @@ public final class ReloadableConfiguration {
                 }
             };
 
-            return ReloadableHolder.simple(instantiate);
+            return ReloadableHolder.of(instantiate);
         }
     }
 }

@@ -17,29 +17,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.monogusa.common;
+package io.github.namiuni.monogusa.translation.annotation;
 
-import java.util.concurrent.atomic.AtomicReference;
-import org.jspecify.annotations.NullMarked;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@NullMarked
-final class ReloadableHolderImpl<T> implements ReloadableHolder<T> {
+/**
+ * Marks a method in a translation service interface as representing a translation key.
+ * The value of this annotation is the key used to look up the translation string.
+ * This annotation is required on all methods in a proxied translation interface.
+ */
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface MessageKey {
 
-    private final InstanceFactory<T> instanceFactory;
-    private final AtomicReference<T> reference;
-
-    ReloadableHolderImpl(final InstanceFactory<T> instanceFactory) {
-        this.instanceFactory = instanceFactory;
-        this.reference = new AtomicReference<>(instanceFactory.create());
-    }
-
-    @Override
-    public void reload() {
-        this.reference.set(this.instanceFactory.create());
-    }
-
-    @Override
-    public T get() {
-        return this.reference.get();
-    }
+    /**
+     * The translation key.
+     *
+     * @return the translation key
+     */
+    String value();
 }

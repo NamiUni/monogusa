@@ -17,23 +17,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.monogusa.example.paper.configurations;
+package io.github.namiuni.monogusa.example.paper;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.jspecify.annotations.NullMarked;
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.objectmapping.meta.Comment;
+import net.kyori.adventure.audience.Audience;
 
-@NullMarked
-@ConfigSerializable
-@SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
-public final class PrimaryConfig {
+public interface RelationalAudience extends Audience {
 
-    @Comment("minimessage for example")
-    private Component miniMessage = MiniMessage.miniMessage().deserialize("<rainbow>HOCON is GOAT");
+    Audience audience();
 
-    public Component miniMessage() {
-        return this.miniMessage;
-    }
+    Audience other();
 }

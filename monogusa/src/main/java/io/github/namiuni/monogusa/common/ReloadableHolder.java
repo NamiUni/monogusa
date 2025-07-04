@@ -40,12 +40,12 @@ public sealed interface ReloadableHolder<T> extends Supplier<T> permits Reloadab
      * <p>Each call to {@link #reload()} on the returned holder will invoke
      * {@link Supplier#get()} on the provided supplier to fetch a new value.</p>
      *
-     * @param    instantiation the supplier to be used for initial creation and subsequent reloads
+     * @param    instanceFactory the supplier to be used for initial creation and subsequent reloads
      * @param    <T> the type of value
      * @return   a new {@code ReloadableHolder} instance
      */
-    static <T> ReloadableHolder<T> simple(final Instantiation<T> instantiation) {
-        return new ReloadableHolderImpl<>(instantiation);
+    static <T> ReloadableHolder<T> of(final InstanceFactory<T> instanceFactory) {
+        return new ReloadableHolderImpl<>(instanceFactory);
     }
 
     /**

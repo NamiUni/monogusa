@@ -17,29 +17,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.monogusa.common;
+package io.github.namiuni.monogusa.translation.proxy;
 
-import java.util.concurrent.atomic.AtomicReference;
+import net.kyori.adventure.text.ComponentLike;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * Resolves a single object of a specific type into a representation that can be used as a placeholder.
+ *
+ * @param <T> the type of value to resolve
+ */
+@FunctionalInterface
 @NullMarked
-final class ReloadableHolderImpl<T> implements ReloadableHolder<T> {
-
-    private final InstanceFactory<T> instanceFactory;
-    private final AtomicReference<T> reference;
-
-    ReloadableHolderImpl(final InstanceFactory<T> instanceFactory) {
-        this.instanceFactory = instanceFactory;
-        this.reference = new AtomicReference<>(instanceFactory.create());
-    }
-
-    @Override
-    public void reload() {
-        this.reference.set(this.instanceFactory.create());
-    }
-
-    @Override
-    public T get() {
-        return this.reference.get();
-    }
+public interface TypeResolver<T> {
+    /**
+     * Resolves a value into a {@link ComponentLike}.
+     *
+     * @param value the value of the argument, guaranteed to be non-null
+     * @return a {@code ComponentLike} representing the resolved placeholder
+     */
+    ComponentLike resolve(T value);
 }

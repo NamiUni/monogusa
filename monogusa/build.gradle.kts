@@ -10,16 +10,19 @@ dependencies {
     api(libs.gremlin.runtime)
 
     // Configurate
-    compileOnly(libs.configurate.core) {
+    compileOnlyApi(libs.configurate.core) {
         exclude("net.kyori", "option")
     }
 
     // Adventure
-    compileOnly(libs.adventure.api)
-    compileOnly(libs.adventure.minimessage)
+    compileOnlyApi(libs.adventure.api)
+    compileOnlyApi(libs.adventure.minimessage)
     api(libs.adventure.serializer.configurate) {
         isTransitive = false
     }
+
+    // Google guava
+    api(libs.google.guava)
 }
 
 indraSpotlessLicenser {

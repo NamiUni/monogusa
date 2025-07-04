@@ -1,8 +1,8 @@
 /*
- * monogusa
+ * MonogusaExamplePaper
  *
  * Copyright (c) 2025. Namiu (うにたろう)
- *                     Contributors
+ *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,29 +17,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.monogusa.common;
+package io.github.namiuni.monogusa.example.paper;
 
-import java.util.concurrent.atomic.AtomicReference;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jspecify.annotations.NullMarked;
+import org.spongepowered.configurate.objectmapping.ConfigSerializable;
+import org.spongepowered.configurate.objectmapping.meta.Comment;
 
 @NullMarked
-final class ReloadableHolderImpl<T> implements ReloadableHolder<T> {
+@ConfigSerializable
+@SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
+public final class ExampleConfiguration {
 
-    private final InstanceFactory<T> instanceFactory;
-    private final AtomicReference<T> reference;
+    @Comment("minimessage for example")
+    private Component miniMessage = MiniMessage.miniMessage().deserialize("<rainbow>HOCON is GOAT");
 
-    ReloadableHolderImpl(final InstanceFactory<T> instanceFactory) {
-        this.instanceFactory = instanceFactory;
-        this.reference = new AtomicReference<>(instanceFactory.create());
-    }
-
-    @Override
-    public void reload() {
-        this.reference.set(this.instanceFactory.create());
-    }
-
-    @Override
-    public T get() {
-        return this.reference.get();
+    public Component miniMessage() {
+        return this.miniMessage;
     }
 }

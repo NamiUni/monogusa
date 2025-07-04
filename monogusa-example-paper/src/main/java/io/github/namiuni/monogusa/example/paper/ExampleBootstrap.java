@@ -19,15 +19,25 @@
  */
 package io.github.namiuni.monogusa.example.paper;
 
+import com.google.common.base.CaseFormat;
+import io.github.miniplaceholders.api.MiniPlaceholders;
 import io.github.namiuni.monogusa.common.ReloadableHolder;
 import io.github.namiuni.monogusa.configuration.ReloadableConfiguration;
-import io.github.namiuni.monogusa.example.paper.configurations.PrimaryConfig;
+import io.github.namiuni.monogusa.translation.proxy.TranslationProxy;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
 import java.util.Objects;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.serializer.configurate4.ConfigurateComponentSerializer;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import net.kyori.adventure.text.minimessage.translation.MiniMessageTranslationStore;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -37,17 +47,20 @@ import org.spongepowered.configurate.hocon.HoconConfigurationLoader;
 @SuppressWarnings({"UnstableApiUsage", "unused"})
 public final class ExampleBootstrap implements PluginBootstrap {
 
-    private @Nullable ReloadableHolder<PrimaryConfig> configHolder;
+    private @Nullable ReloadableHolder<ExampleConfiguration> configuration;
+    private @Nullable ReloadableHolder<ExampleTranslation> translation;
 
     @Override
     public void bootstrap(final BootstrapContext context) {
         this.initializeConfiguration(context);
+        this.initializeTranslation(context);
     }
 
     @Override
     public JavaPlugin createPlugin(final PluginProviderContext context) {
-        Objects.requireNonNull(this.configHolder);
-        return new ExamplePaper(this.configHolder);
+        Objects.requireNonNull(this.configuration);
+        Objects.requireNonNull(this.translation);
+        return new ExamplePaper(this.configuration, this.translation);
     }
 
     private void initializeConfiguration(final BootstrapContext context) {
@@ -67,9 +80,38 @@ public final class ExampleBootstrap implements PluginBootstrap {
                 .build();
 
         // Create ReloadableHolder instance.
-        this.configHolder = ReloadableConfiguration.builder()
+        this.configuration = ReloadableConfiguration.builder()
                 .loader(configurationLoader)
-                .raw(PrimaryConfig.class)
+                .raw(ExampleConfiguration.class)
+                .create();
+    }
+
+    private void initializeTranslation(final BootstrapContext bootstrapContext) {
+        this.translation = TranslationProxy.builder()
+                .translator(() -> MiniMessageTranslationStore.create(Key.key("monogusa", "message")))
+                .proxy(ExampleTranslation.class)
+                .arguments(arguments -> arguments
+                        .keyFormatter(string -> CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, string))
+                        .placeholders(audience -> {
+                            final TagResolver.Builder tagBuilder = TagResolver.builder();
+                            if (Bukkit.getPluginManager().isPluginEnabled("MiniPlaceholders")) {
+                                tagBuilder.resolver(MiniPlaceholders.getAudienceGlobalPlaceholders(audience));
+                                if (audience instanceof RelationalAudience relational) {
+                                    tagBuilder.resolver(MiniPlaceholders.getRelationalPlaceholders(relational.audience(), relational.other()));
+                                }
+                            }
+                            return tagBuilder.build();
+                        })
+                        .typeResolver(int.class, Component::text)
+                        .typeResolver(World.class, world -> Component.text(world.getName()))
+                        .typeResolver(Player.class, Player::displayName)
+                        .keyResolver("Admin", (Player player) -> player.name().color(NamedTextColor.RED))
+                )
+                .sender((audience, component) -> {
+                    if (audience instanceof RelationalAudience relational) {
+                        relational.audience().sendMessage(component);
+                    }
+                })
                 .create();
     }
 }

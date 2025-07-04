@@ -17,29 +17,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.monogusa.common;
+package io.github.namiuni.monogusa.translation.annotation;
 
-import java.util.concurrent.atomic.AtomicReference;
-import org.jspecify.annotations.NullMarked;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@NullMarked
-final class ReloadableHolderImpl<T> implements ReloadableHolder<T> {
+/**
+ * Marks a method parameter as a placeholder, allowing its name to be overridden.
+ * If this annotation is not present, the parameter's reflective name will be used as the key.
+ */
+@Target({ElementType.PARAMETER, ElementType.TYPE_USE})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface PlaceholderKey {
 
-    private final InstanceFactory<T> instanceFactory;
-    private final AtomicReference<T> reference;
-
-    ReloadableHolderImpl(final InstanceFactory<T> instanceFactory) {
-        this.instanceFactory = instanceFactory;
-        this.reference = new AtomicReference<>(instanceFactory.create());
-    }
-
-    @Override
-    public void reload() {
-        this.reference.set(this.instanceFactory.create());
-    }
-
-    @Override
-    public T get() {
-        return this.reference.get();
-    }
+    /**
+     * The key for this placeholder.
+     *
+     * @return the placeholder key
+     */
+    String value();
 }

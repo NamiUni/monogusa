@@ -17,29 +17,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.monogusa.common;
+package io.github.namiuni.monogusa.translation.proxy;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.lang.reflect.Method;
+import net.kyori.adventure.audience.Audience;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * Provides context about a method invocation within the translation proxy.
+ * This is an immutable data carrier passed to resolvers.
+ *
+ * @param method the invoked method
+ * @param args the arguments passed to the method
+ * @param audience the audience resolved from the method arguments, or {@link Audience#empty()} if none was found
+ */
 @NullMarked
-final class ReloadableHolderImpl<T> implements ReloadableHolder<T> {
-
-    private final InstanceFactory<T> instanceFactory;
-    private final AtomicReference<T> reference;
-
-    ReloadableHolderImpl(final InstanceFactory<T> instanceFactory) {
-        this.instanceFactory = instanceFactory;
-        this.reference = new AtomicReference<>(instanceFactory.create());
-    }
-
-    @Override
-    public void reload() {
-        this.reference.set(this.instanceFactory.create());
-    }
-
-    @Override
-    public T get() {
-        return this.reference.get();
-    }
+public record InvocationContext(Method method, Object[] args, Audience audience) {
 }

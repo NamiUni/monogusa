@@ -1,4 +1,5 @@
 import org.gradle.kotlin.dsl.invoke
+import xyz.jpenilla.resourcefactory.paper.PaperPluginYaml.Load
 
 plugins {
     id("monogusa.base")
@@ -40,6 +41,10 @@ paperPluginYaml {
     apiVersion = "1.21"
     author = "Namiu (うにたろう)"
     version = rootProject.version.toString()
+
+    dependencies {
+        server("MiniPlaceholders", Load.BEFORE, false)
+    }
 }
 
 indraSpotlessLicenser {

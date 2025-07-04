@@ -17,29 +17,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.monogusa.common;
+package io.github.namiuni.monogusa.translation.proxy;
 
-import java.util.concurrent.atomic.AtomicReference;
+import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * A functional interface responsible for sending a rendered component to an audience.
+ */
 @NullMarked
-final class ReloadableHolderImpl<T> implements ReloadableHolder<T> {
+@FunctionalInterface
+public interface ComponentSender {
 
-    private final InstanceFactory<T> instanceFactory;
-    private final AtomicReference<T> reference;
+    /**
+     * A simple sender that calls {@link Audience#sendMessage(Component)}.
+     */
+    ComponentSender SIMPLE = Audience::sendMessage;
 
-    ReloadableHolderImpl(final InstanceFactory<T> instanceFactory) {
-        this.instanceFactory = instanceFactory;
-        this.reference = new AtomicReference<>(instanceFactory.create());
-    }
-
-    @Override
-    public void reload() {
-        this.reference.set(this.instanceFactory.create());
-    }
-
-    @Override
-    public T get() {
-        return this.reference.get();
-    }
+    /**
+     * Sends the component to the audience.
+     *
+     * @param audience the receiver of the message
+     * @param component the fully rendered component to send
+     */
+    void send(Audience audience, Component component);
 }

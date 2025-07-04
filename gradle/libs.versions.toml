@@ -13,6 +13,7 @@ configurate = "4.2.0"
 adventure = "4.23.0"
 paper-api = "1.21.6-R0.1-SNAPSHOT"
 mini-placeholders = "2.3.0"
+google-guava = "33.4.8-jre"
 
 [libraries]
 # Tool
@@ -29,6 +30,7 @@ configurate-hocon = { group = "org.spongepowered", name = "configurate-hocon", v
 adventure-api = { group = "net.kyori", name = "adventure-api", version.ref = "adventure" }
 adventure-minimessage = { group = "net.kyori", name = "adventure-text-minimessage", version.ref = "adventure" }
 adventure-serializer-configurate = { group = "net.kyori", name = "adventure-serializer-configurate4", version.ref = "adventure" }
+google-guava = { group = "com.google.guava", name = "guava", version.ref = "google-guava" }
 
 [plugins]
 resource-factory-paper = { id = "xyz.jpenilla.resource-factory-paper-convention", version.ref = "resource-factory" }

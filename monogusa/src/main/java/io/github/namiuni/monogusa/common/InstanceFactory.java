@@ -19,27 +19,19 @@
  */
 package io.github.namiuni.monogusa.common;
 
-import java.util.concurrent.atomic.AtomicReference;
-import org.jspecify.annotations.NullMarked;
+/**
+ * A factory responsible for creating a new instance of a service or component.
+ * It's expected that each call to {@link #create()} produces a fresh instance.
+ *
+ * @param <T> the type of instance to create
+ */
+@FunctionalInterface
+public interface InstanceFactory<T> {
 
-@NullMarked
-final class ReloadableHolderImpl<T> implements ReloadableHolder<T> {
-
-    private final InstanceFactory<T> instanceFactory;
-    private final AtomicReference<T> reference;
-
-    ReloadableHolderImpl(final InstanceFactory<T> instanceFactory) {
-        this.instanceFactory = instanceFactory;
-        this.reference = new AtomicReference<>(instanceFactory.create());
-    }
-
-    @Override
-    public void reload() {
-        this.reference.set(this.instanceFactory.create());
-    }
-
-    @Override
-    public T get() {
-        return this.reference.get();
-    }
+    /**
+     * Creates a new instance.
+     *
+     * @return a new instance of type T
+     */
+    T create();
 }

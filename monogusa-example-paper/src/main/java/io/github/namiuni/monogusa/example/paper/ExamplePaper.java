@@ -19,8 +19,8 @@
  */
 package io.github.namiuni.monogusa.example.paper;
 
-import io.github.namiuni.monogusa.example.paper.configurations.PrimaryConfig;
 import java.util.function.Supplier;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NullMarked;
 
@@ -28,15 +28,21 @@ import org.jspecify.annotations.NullMarked;
 @SuppressWarnings("unused")
 public final class ExamplePaper extends JavaPlugin {
 
-    private final Supplier<PrimaryConfig> primaryConfig;
+    private final Supplier<ExampleConfiguration> configuration;
+    private final Supplier<ExampleTranslation> translation;
 
     // If the argument type is Supplier, the reload method will not be accidentally called.
-    public ExamplePaper(final Supplier<PrimaryConfig> primaryConfig) {
-        this.primaryConfig = primaryConfig;
+    public ExamplePaper(
+            final Supplier<ExampleConfiguration> configuration,
+            final Supplier<ExampleTranslation> translation
+    ) {
+        this.configuration = configuration;
+        this.translation = translation;
     }
 
     @Override
     public void onEnable() {
+        this.translation.get().pluginEnableBroadCast(Bukkit.getConsoleSender(), this.configuration.get().miniMessage());
         super.onEnable(); // TODO: Register listeners
     }
 }
