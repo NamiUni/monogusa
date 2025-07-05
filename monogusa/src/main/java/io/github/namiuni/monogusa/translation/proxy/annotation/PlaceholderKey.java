@@ -17,12 +17,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.monogusa.translation.annotation;
+package io.github.namiuni.monogusa.translation.proxy.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Marks a method parameter as a placeholder, allowing its name to be overridden.
@@ -30,6 +31,7 @@ import java.lang.annotation.Target;
  */
 @Target({ElementType.PARAMETER, ElementType.TYPE_USE})
 @Retention(RetentionPolicy.RUNTIME)
+@NullMarked
 public @interface PlaceholderKey {
 
     /**

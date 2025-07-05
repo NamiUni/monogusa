@@ -20,11 +20,10 @@
 package io.github.namiuni.monogusa.translation.proxy;
 
 import com.google.common.base.CaseFormat;
-import io.github.namiuni.monogusa.translation.annotation.PlaceholderKey;
+import io.github.namiuni.monogusa.translation.proxy.annotation.PlaceholderKey;
 import java.lang.reflect.Parameter;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -74,12 +73,10 @@ public final class ArgumentResolver {
         final TagResolver.Builder tagBuilder = TagResolver.builder();
         tagBuilder.resolver(this.placeholders.apply(context.audience()));
 
-        final Parameter[] parameters = context.method().getParameters();
-        for (int i = 0; i < parameters.length; i++) {
-            final Parameter parameter = parameters[i];
-            final String key = this.resolveKey(parameter);
-            final Object value = Objects.requireNonNull(context.args()[i], "value");
-            tagBuilder.resolver(this.resolveValue(key, value));
+        for (final var entry : context.arguments().entrySet()) {
+            final var key = this.resolveKey(entry.getKey());
+            final var placeholder = this.resolveValue(key, entry.getValue());
+            tagBuilder.resolver(placeholder);
         }
 
         return tagBuilder.build();
@@ -95,21 +92,26 @@ public final class ArgumentResolver {
     }
 
     @SuppressWarnings("PatternValidation")
-    private TagResolver resolveValue(final String key, final Object value) {
+    private TagResolver resolveValue(final String key, final @Nullable Object value) {
 
-        // 1. Prioritize key-specific resolvers
+        // 1. If the value is null, resolve as an empty string
+        if (value == null) {
+            return Placeholder.parsed(key, "");
+        }
+
+        // 2. Prioritize key-specific resolvers
         final TypeResolver<?> keyResolver = this.keyResolvers.get(key);
         if (keyResolver != null) {
             return Placeholder.component(key, this.applyResolver(keyResolver, value));
         }
 
-        // 2. Fall back to type-specific resolvers (including supertypes)
+        // 3. Fall back to type-specific resolvers (including supertypes)
         final TypeResolver<?> typeResolver = this.findTypeResolver(value.getClass());
         if (typeResolver != null) {
             return Placeholder.component(key, this.applyResolver(typeResolver, value));
         }
 
-        // 3. Handle special adventure types
+        // 4. Handle special adventure types
         return switch (value) {
             case TagResolver tagResolver -> tagResolver;
             case ComponentLike componentLike -> Placeholder.component(key, componentLike);

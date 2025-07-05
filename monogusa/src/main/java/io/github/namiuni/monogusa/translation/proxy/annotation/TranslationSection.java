@@ -17,21 +17,34 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.monogusa.translation.proxy;
+package io.github.namiuni.monogusa.translation.proxy.annotation;
 
-import java.lang.reflect.Parameter;
-import java.util.Map;
-import net.kyori.adventure.audience.Audience;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
- * Provides context about a method invocation within the translation proxy.
- * This is an immutable data carrier passed to resolvers.
- *
- * @param arguments the parameters and the arguments
- * @param audience the audience resolved from the method arguments, or {@link Audience#empty()} if none was found
+ * Marks an interface or a method returning an interface as a translation section.
+ * The value of this annotation is used as a prefix for nested translation keys.
  */
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
 @NullMarked
-public record InvocationContext(Map<Parameter, @Nullable Object> arguments, Audience audience) {
+public @interface TranslationSection {
+
+    /**
+     * The key prefix for this section.
+     *
+     * @return the section key prefix
+     */
+    String value();
+
+    /**
+     * The delimiter to be used after this section's key.
+     *
+     * @return the delimiter character
+     */
+    char delimiter() default '.';
 }

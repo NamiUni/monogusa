@@ -35,6 +35,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.minimessage.translation.MiniMessageTranslationStore;
+import net.kyori.adventure.translation.Translator;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -48,7 +49,8 @@ import org.spongepowered.configurate.hocon.HoconConfigurationLoader;
 public final class ExampleBootstrap implements PluginBootstrap {
 
     private @Nullable ReloadableHolder<ExampleConfiguration> configuration;
-    private @Nullable ReloadableHolder<ExampleTranslation> translation;
+    private @Nullable ReloadableHolder<Translator> translator;
+    private @Nullable ExampleTranslation translation;
 
     @Override
     public void bootstrap(final BootstrapContext context) {
@@ -87,8 +89,8 @@ public final class ExampleBootstrap implements PluginBootstrap {
     }
 
     private void initializeTranslation(final BootstrapContext bootstrapContext) {
+        this.translator = ReloadableHolder.of(() -> MiniMessageTranslationStore.create(Key.key("monogusa", "message"))); // TODO: Implementation easy builder
         this.translation = TranslationProxy.builder()
-                .translator(() -> MiniMessageTranslationStore.create(Key.key("monogusa", "message")))
                 .proxy(ExampleTranslation.class)
                 .arguments(arguments -> arguments
                         .keyFormatter(string -> CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, string))

@@ -19,81 +19,129 @@
  */
 package io.github.namiuni.monogusa.translation.proxy;
 
-import io.github.namiuni.monogusa.translation.annotation.MessageKey;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Objects;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.Proxy;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.ComponentLike;
-import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.minimessage.translation.Argument;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-// TODO: WIP
 @NullMarked
 final class TranslationInvocationHandler implements InvocationHandler {
 
-    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
+    private static final MethodHandles.Lookup PRIVATE_LOOKUP; // This is necessary to invoke default methods on interfaces.
+    private static final Object[] EMPTY_OBJECT_ARRAY;
 
+    static {
+        try {
+            PRIVATE_LOOKUP = MethodHandles.privateLookupIn(MethodHandles.lookup().lookupClass(), MethodHandles.lookup());
+            EMPTY_OBJECT_ARRAY = new Object[0];
+        } catch (final IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private final String keyPrefix;
     private final ArgumentResolver argumentResolver;
     private final ComponentSender componentSender;
+    private final Map<Method, ScannedMethod> scannedMethods;
 
     TranslationInvocationHandler(
+            final String keyPrefix,
             final ArgumentResolver argumentResolver,
-            final ComponentSender componentSender
+            final ComponentSender componentSender,
+            final Map<Method, ScannedMethod> scannedMethods
     ) {
+        this.keyPrefix = keyPrefix;
         this.argumentResolver = argumentResolver;
         this.componentSender = componentSender;
+        this.scannedMethods = scannedMethods;
     }
 
     @Override
-    public @Nullable Object invoke(final Object proxy, final Method method, final @Nullable Object @Nullable [] args) throws Throwable {
+    public @Nullable Object invoke(final Object proxy, final Method method, final @Nullable Object @Nullable [] nullableArgs) throws Throwable {
+        final Class<?> declaringClass = method.getDeclaringClass();
 
-        // FIXME
-        if (method.getDeclaringClass().equals(Object.class)) {
+        // 1. Handle methods from the Object class to ensure correct proxy behavior.
+        if (declaringClass.equals(Object.class)) {
             return switch (method.getName()) {
-                case "equals" -> proxy == args[0];
+                case "equals" -> nullableArgs != null && nullableArgs.length == 1 && proxy == nullableArgs[0];
                 case "hashCode" -> System.identityHashCode(proxy);
-                case "toString" -> "Proxy for " + proxy.getClass().getInterfaces()[0].getName();
-                default -> method.invoke(this, args);
+                case "toString" -> "TranslationProxy<" + proxy.getClass().getInterfaces()[0].getSimpleName() + ">";
+                default -> throw new UnsupportedOperationException("Unsupported Object method: %s".formatted(method.getName()));
             };
         }
 
-        final Object[] arguments = args == null ? EMPTY_OBJECT_ARRAY : Arrays.stream(args)
-                .map(arg -> Objects.requireNonNull(arg, "Argument in array must not be null")) // TODO: exception handling
-                .toArray();
-
-        // Get the message key
-        final MessageKey annotation = method.getAnnotation(MessageKey.class);
-        if (annotation == null || annotation.value().isEmpty() || annotation.value().isBlank()) {
-            throw new UnsupportedOperationException();  // TODO: exception handling
+        // 2. Handle default interface methods.
+        if (method.isDefault()) {
+            return PRIVATE_LOOKUP.unreflectSpecial(method, declaringClass)
+                    .bindTo(proxy)
+                    .invokeWithArguments(nullableArgs);
         }
-        final String messageKey = annotation.value();
 
-        // Create invocation context
-        final Audience audience = arguments[0] instanceof Audience it ? it : Audience.empty();
-        final InvocationContext context = new InvocationContext(method, arguments, audience);
+        // 3. Get pre-scanned method information from the cache for high performance.
+        final ScannedMethod scanned = this.scannedMethods.get(method);
+        if (scanned == null) {
+            // This should not happen if the scanning process is correct.
+            throw new IllegalStateException("Method not scanned, or it's not a valid translation method: %s".formatted(method));
+        }
 
-        // Create translatable component
+        // 4. Handle nested sections by creating a child proxy.
+        if (scanned.sectionAnnotation() != null) {
+            final String nextPrefix = this.keyPrefix + scanned.key() + scanned.sectionAnnotation().delimiter();
+            final InvocationHandler childHandler = new TranslationInvocationHandler(
+                    nextPrefix,
+                    this.argumentResolver,
+                    this.componentSender,
+                    this.scannedMethods
+            );
+
+            return Proxy.newProxyInstance(
+                    method.getReturnType().getClassLoader(),
+                    new Class<?>[]{method.getReturnType()},
+                    childHandler
+            );
+        }
+
+        // 5. Process a standard translation method.
+        final String finalKey = this.keyPrefix + scanned.key();
+        final InvocationContext context = this.createContext(method.getParameters(), nullableArgs);
         final TagResolver tagResolver = this.argumentResolver.resolve(context);
-        final TranslatableComponent component = Component.translatable(messageKey, Argument.tagResolver(tagResolver));
+        final Component component = Component.translatable(finalKey, Argument.tagResolver(tagResolver));
 
-        // Post process
-        return this.postProcess(method.getReturnType(), context.audience(), component);
-    }
-
-    private @Nullable Object postProcess(final Class<?> returnType, final Audience audience, final TranslatableComponent component) throws IllegalArgumentException {
+        // 6. Send the component or return it based on the method's return type.
+        final Class<?> returnType = method.getReturnType();
         if (returnType == void.class || returnType == Void.class) {
-            this.componentSender.send(audience, component);
+            this.componentSender.send(context.audience(), component);
             return null;
-        } else if (returnType == ComponentLike.class || returnType == Component.class || returnType == TranslatableComponent.class) {
+        } else {
             return component;
         }
+    }
 
-        throw new IllegalArgumentException(); // TODO exception handling
+    private InvocationContext createContext(final Parameter[] parameters, final @Nullable Object @Nullable [] nullableArgs) {
+        final Object[] args = nullableArgs == null ? EMPTY_OBJECT_ARRAY : nullableArgs;
+
+        final Audience audience;
+        if (args.length > 0 && args[0] instanceof Audience foundAudience) {
+            audience = foundAudience;
+        } else {
+            audience = Audience.empty();
+        }
+
+        final Map<Parameter, @Nullable Object> arguments = new HashMap<>();
+        for (int i = 0; i < parameters.length; i++) {
+            // Ensure we don't go out of bounds if args is shorter than parameters
+            arguments.put(parameters[i], i < args.length ? args[i] : null);
+        }
+        return new InvocationContext(Collections.unmodifiableMap(arguments), audience);
     }
 }

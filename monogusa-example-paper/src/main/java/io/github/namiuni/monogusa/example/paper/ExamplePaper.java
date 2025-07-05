@@ -29,12 +29,12 @@ import org.jspecify.annotations.NullMarked;
 public final class ExamplePaper extends JavaPlugin {
 
     private final Supplier<ExampleConfiguration> configuration;
-    private final Supplier<ExampleTranslation> translation;
+    private final ExampleTranslation translation;
 
     // If the argument type is Supplier, the reload method will not be accidentally called.
     public ExamplePaper(
             final Supplier<ExampleConfiguration> configuration,
-            final Supplier<ExampleTranslation> translation
+            final ExampleTranslation translation
     ) {
         this.configuration = configuration;
         this.translation = translation;
@@ -42,7 +42,7 @@ public final class ExamplePaper extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        this.translation.get().pluginEnableBroadCast(Bukkit.getConsoleSender(), this.configuration.get().miniMessage());
+        this.translation.pluginEnableBroadCast(Bukkit.getConsoleSender(), this.configuration.get().miniMessage());
         super.onEnable(); // TODO: Register listeners
     }
 }

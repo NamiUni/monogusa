@@ -19,20 +19,20 @@
  */
 package io.github.namiuni.monogusa.translation.proxy;
 
-import io.github.namiuni.monogusa.common.InstanceFactory;
-import io.github.namiuni.monogusa.common.ReloadableHolder;
+import io.github.namiuni.monogusa.translation.proxy.annotation.TranslationSection;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import net.kyori.adventure.translation.Translator;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A factory for creating reloadable, proxied translation service interfaces.
- *
- * <p>This is the main entry point for creating a type-safe translation service.</p>
+ * A builder for proxied translation interfaces.
  */
 @NullMarked
 public final class TranslationProxy {
@@ -42,56 +42,33 @@ public final class TranslationProxy {
     }
 
     /**
-     * Starts the process of building a reloadable translation service proxy.
+     * The process of building a translation proxy.
      *
-     * @return the first step of the builder
+     * @return the translation proxy builder
      */
-    public static ITranslator builder() {
+    public static IProxy builder() {
         return new Builder<>();
     }
 
     /**
-     * The first step: specifying the {@link Translator} source.
+     * The specifying the translation interface to be proxied.
      */
-    public interface ITranslator {
+    public interface IProxy {
 
         /**
-         * Sets the factory that will create new {@link Translator} instances on reload.
+         * Sets the translation interface that declares translation methods.
          *
-         * @param factory a factory for the translator instance
-         * @return the next step of the builder
+         * @param interfaces the translation interface to be implemented by a proxy
+         * @param <I>            the type of the translation interface
+         * @return the loadable builder stage
          */
-        IService translator(InstanceFactory<Translator> factory);
-
-        /**
-         * Uses an existing {@link ReloadableHolder} as the source for the {@link Translator}.
-         * This is useful for sharing a single reloader between multiple proxies.
-         *
-         * @param holder a reloadable holder for the translator instance
-         * @return the next step of the builder
-         */
-        IService translator(ReloadableHolder<Translator> holder);
+        <I> ILoadable<I> proxy(Class<I> interfaces);
     }
 
     /**
-     * The second step: specifying the service interface to be proxied.
-     */
-    public interface IService {
-
-        /**
-         * Sets the service interface that declares translation methods.
-         *
-         * @param serviceInterface the interface to be implemented by a dynamic proxy
-         * @param <I>              the type of the service interface
-         * @return the final, loadable builder stage
-         */
-        <I> ILoadable<I> proxy(Class<I> serviceInterface);
-    }
-
-    /**
-     * The final step: configuring proxy options and creating the holder.
+     * The configuring proxy options and creating the translation proxy.
      *
-     * @param <I> the type of the service interface
+     * @param <I> the type of the translation interface
      */
     public interface ILoadable<I> {
 
@@ -113,82 +90,74 @@ public final class TranslationProxy {
         ILoadable<I> sender(ComponentSender sender);
 
         /**
-         * Creates the {@link ReloadableHolder} for the translation service.
+         * Create the translation proxy.
          *
-         * <p>The underlying {@link Translator} is reloaded on the first call to
-         * {@link ReloadableHolder#get()} or {@link ReloadableHolder#reload()}.</p>
-         *
-         * @return a reloadable holder for the translation service proxy
+         * @return the translation proxy
          */
-        ReloadableHolder<I> create();
+        I create();
     }
 
-    private static final class Builder<I> implements ITranslator, IService, ILoadable<I> {
-        private @Nullable ReloadableHolder<Translator> translatorHolder;
-        private @Nullable Class<I> proxyInterface;
-        private final ArgumentResolver.Builder argumentBuilder = ArgumentResolver.builder();
+    static final class Builder<I> implements IProxy, ILoadable<I> {
+
+        final ArgumentResolver.Builder argumentBuilder = ArgumentResolver.builder();
         private ComponentSender componentSender = ComponentSender.SIMPLE;
-
-        @Override
-        public IService translator(final InstanceFactory<Translator> factory) {
-            this.translatorHolder = ReloadableHolder.of(factory);
-
-            return this;
-        }
-
-        @Override
-        public IService translator(final ReloadableHolder<Translator> translatorHolder) {
-            this.translatorHolder = translatorHolder;
-
-            return this;
-        }
+        private @Nullable Class<I> proxyInterfaces;
 
         @Override
         @SuppressWarnings("unchecked")
-        public <U> ILoadable<U> proxy(final Class<U> serviceInterface) {
-            if (!serviceInterface.isInterface()) {
-                throw new IllegalArgumentException("proxy(Class<I>) only accepts interfaces. Provided: " + serviceInterface.getName());
+        public <U> ILoadable<U> proxy(final Class<U> interfaces) {
+            if (!interfaces.isInterface()) {
+                throw new IllegalArgumentException("proxy(Class<I>) only accepts interfaces. Provided: " + interfaces.getName());
             }
-            this.proxyInterface = (Class<I>) serviceInterface;
 
+            this.proxyInterfaces = (Class<I>) interfaces;
             return (ILoadable<U>) this;
         }
 
         @Override
         public ILoadable<I> arguments(final Consumer<ArgumentResolver.Builder> arguments) {
             arguments.accept(this.argumentBuilder);
-
             return this;
         }
 
         @Override
         public ILoadable<I> sender(final ComponentSender sender) {
             this.componentSender = sender;
-
             return this;
         }
 
         @Override
-        public ReloadableHolder<I> create() {
-            Objects.requireNonNull(this.translatorHolder, "A translator source must be provided");
-            Objects.requireNonNull(this.proxyInterface, "A proxy interface must be provided");
+        public I create() {
+            // Capture the builder's state into final local variables for thread safety.
+            final Class<I> interfaces = Objects.requireNonNull(this.proxyInterfaces, "Translation interface must be provided");
+            final ArgumentResolver arguments = this.argumentBuilder.build();
+            final ComponentSender sender = this.componentSender;
 
-            final InvocationHandler invocationHandler = new TranslationInvocationHandler(
-                    this.argumentBuilder.build(),
-                    this.componentSender);
+            // 1. Pre-scan all methods for maximum runtime performance.
+            final Map<Method, ScannedMethod> scannedMethods = new ConcurrentHashMap<>();
+            ScannedMethod.scanRecursively(scannedMethods, interfaces);
 
+            // 2. Determine the root key prefix from the interface annotation.
+            final TranslationSection rootSection = interfaces.getAnnotation(TranslationSection.class);
+            final String rootPrefix = rootSection != null ? rootSection.value() + rootSection.delimiter() : "";
+
+            // 3. Create the root InvocationHandler with the captured, immutable state.
+            final InvocationHandler rootHandler = new TranslationInvocationHandler(
+                    rootPrefix,
+                    arguments,
+                    sender,
+                    Collections.unmodifiableMap(scannedMethods)
+            );
+
+            // 4. Create the initial proxy instance.
             @SuppressWarnings("unchecked")
             final I proxyInstance = (I) Proxy.newProxyInstance(
-                    this.proxyInterface.getClassLoader(),
-                    new Class<?>[] {this.proxyInterface},
-                    invocationHandler);
+                    interfaces.getClassLoader(),
+                    new Class<?>[] {interfaces},
+                    rootHandler);
 
-            final InstanceFactory<I> proxyAndLifecycleManager = () -> {
-                this.translatorHolder.reload();
-                return proxyInstance;
-            };
-
-            return ReloadableHolder.of(proxyAndLifecycleManager);
+            // 5. Finish!!
+            return proxyInstance;
         }
     }
 }

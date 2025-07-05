@@ -19,12 +19,12 @@
  */
 package io.github.namiuni.monogusa.example.paper;
 
-import io.github.namiuni.monogusa.translation.annotation.MessageKey;
+import io.github.namiuni.monogusa.translation.proxy.annotation.TranslationKey;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 
 public interface ExampleTranslation {
 
-    @MessageKey("monogusa_example.plugin.enable.broadcast")
+    @TranslationKey("monogusa_example.plugin.enable.broadcast")
     void pluginEnableBroadCast(Audience audience, Component hocon);
 }
