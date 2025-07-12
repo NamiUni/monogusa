@@ -24,4 +24,5 @@ tasks.compileJava {
 
 dependencies {
     checkstyle(libs.checkstyle)
+    compileOnlyApi(libs.jspecify)
 }
